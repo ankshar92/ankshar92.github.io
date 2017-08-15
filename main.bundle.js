@@ -32,6 +32,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 
 var routes = [{
         path: '',
+        redirectTo: '/dashboard/2016/22-05-2016',
+        pathMatch: 'full'
+    }, {
+        path: 'dashboard/:season/:todaysDate',
         component: __WEBPACK_IMPORTED_MODULE_2__home_home_component__["a" /* HomeComponent */]
     }];
 var AppRouterModule = (function () {
@@ -306,7 +310,7 @@ module.exports = module.exports.toString();
 /***/ "../../../../../src/app/home/home.component.html":
 /***/ (function(module, exports) {
 
-module.exports = "<div class=\"row\">\n    <div class=\"col-xs-12\">\n        <app-todays-match [matches]=\"todaysMatches\" [date]=\"todaysDate\"></app-todays-match>\n    </div>\n</div>\n<div class=\"row\">\n    <div class=\"col-xs-12 col-md-6\">\n        <div class=\"tile\">\n            <h4 class=\"text-uppercase text-muted\">Winners of the Season</h4>\n            <app-pie-chart [pieChartData]=pieChartData></app-pie-chart>\n        </div>\n    </div>\n    <div class=\"col-xs-12 col-md-6\">\n        <div class=\"tile\">\n            <div *ngIf=\"todaysMatches\">\n                <h4 class=\"text-uppercase text-muted text-sm\">Run Rate</h4>\n                <p>{{todaysMatches[0].team1}} vs {{todaysMatches[0].team2}} on {{todaysMatches[0].date}}</p>\n                <app-run-rate [runRateData]=runRateData></app-run-rate>\n            </div>\n        </div>\n    </div>\n</div>\n<div class=\"row\">\n    <div class=\"col-xs-12\">\n        <app-season-matches [matches]=\"seasonMatches\"></app-season-matches>\n    </div>\n</div>"
+module.exports = "<div class=\"row\">\n    <div class=\"col-xs-12\">\n        <app-todays-match [matches]=\"todaysMatches\" [date]=\"todaysDate\"></app-todays-match>\n    </div>\n</div>\n<div class=\"row\">\n    <div class=\"col-xs-12 col-md-6\">\n        <div class=\"tile\">\n            <h4 class=\"text-uppercase text-muted\">Winners of the Season {{season}}</h4>\n            <app-pie-chart [pieChartData]=pieChartData></app-pie-chart>\n            <app-loader [show]=\"!pieChartData\"></app-loader>\n        </div>\n    </div>\n    <div class=\"col-xs-12 col-md-6\">\n        <div class=\"tile\">\n            <h4 class=\"text-uppercase text-muted text-sm\">Run Rate</h4>\n            <div *ngIf=\"todaysMatches && todaysMatches.length\">\n                <p>{{todaysMatches[0].team1}} vs {{todaysMatches[0].team2}} on {{todaysMatches[0].date}}</p>\n                <app-run-rate [runRateData]=runRateData></app-run-rate>\n            </div>\n            <div *ngIf=\"todaysMatches && !todaysMatches.length\" class=\"align-center\">\n                No match today...\n            </div>\n            <app-loader [show]=\"downloadingDeliveries\"></app-loader>\n        </div>\n    </div>\n</div>\n<div class=\"row\">\n    <div class=\"col-xs-12\">\n        <app-season-matches [matches]=\"seasonMatches\" [season]=season></app-season-matches>\n    </div>\n</div>"
 
 /***/ }),
 
@@ -315,7 +319,8 @@ module.exports = "<div class=\"row\">\n    <div class=\"col-xs-12\">\n        <a
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__("../../../core/@angular/core.es5.js");
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__home_service__ = __webpack_require__("../../../../../src/app/home/home.service.ts");
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__angular_router__ = __webpack_require__("../../../router/@angular/router.es5.js");
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__home_service__ = __webpack_require__("../../../../../src/app/home/home.service.ts");
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return HomeComponent; });
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -328,12 +333,20 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 
 
+
 var HomeComponent = (function () {
-    function HomeComponent(homeService) {
+    function HomeComponent(homeService, route) {
         this.homeService = homeService;
+        this.route = route;
+        this.downloadingDeliveries = true;
     }
     HomeComponent.prototype.ngOnInit = function () {
         var _this = this;
+        this.route.paramMap
+            .subscribe(function (params) {
+            _this.todaysDate = params.get('todaysDate');
+            _this.season = params.get('season');
+        });
         var p1 = new Promise(function (resolve, reject) {
             _this.homeService.populateData({
                 path: 'assets/data/matches.csv',
@@ -359,7 +372,10 @@ var HomeComponent = (function () {
         });
         Promise.all([p1, p2])
             .then(function () {
-            _this.calculateRunRate(_this.todaysMatches[0].id);
+            if (_this.todaysMatches && _this.todaysMatches.length) {
+                _this.calculateRunRate(_this.todaysMatches[0].id);
+            }
+            _this.downloadingDeliveries = false;
         })
             .catch(function (err) {
             console.log(err);
@@ -368,8 +384,6 @@ var HomeComponent = (function () {
     ;
     HomeComponent.prototype.initialiseData = function (resolve, reject) {
         var _this = this;
-        this.todaysDate = '22-05-2016';
-        this.season = '2016';
         this.getTodaysMatches(this.todaysDate, resolve, reject);
         setTimeout(function () {
             _this.getSeasonMatches(_this.season);
@@ -428,10 +442,10 @@ HomeComponent = __decorate([
         template: __webpack_require__("../../../../../src/app/home/home.component.html"),
         styles: [__webpack_require__("../../../../../src/app/home/home.component.css")]
     }),
-    __metadata("design:paramtypes", [typeof (_a = typeof __WEBPACK_IMPORTED_MODULE_1__home_service__["a" /* HomeService */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_1__home_service__["a" /* HomeService */]) === "function" && _a || Object])
+    __metadata("design:paramtypes", [typeof (_a = typeof __WEBPACK_IMPORTED_MODULE_2__home_service__["a" /* HomeService */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_2__home_service__["a" /* HomeService */]) === "function" && _a || Object, typeof (_b = typeof __WEBPACK_IMPORTED_MODULE_1__angular_router__["ActivatedRoute"] !== "undefined" && __WEBPACK_IMPORTED_MODULE_1__angular_router__["ActivatedRoute"]) === "function" && _b || Object])
 ], HomeComponent);
 
-var _a;
+var _a, _b;
 //# sourceMappingURL=home.component.js.map
 
 /***/ }),
@@ -456,6 +470,7 @@ var _a;
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__season_matches_season_matches_component__ = __webpack_require__("../../../../../src/app/home/season-matches/season-matches.component.ts");
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_10__d3_components_pie_chart_component__ = __webpack_require__("../../../../../src/app/home/d3-components/pie-chart.component.ts");
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_11__d3_components_run_rate_component__ = __webpack_require__("../../../../../src/app/home/d3-components/run-rate.component.ts");
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_12__loader_loader_component__ = __webpack_require__("../../../../../src/app/home/loader/loader.component.ts");
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return HomeModule; });
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -463,6 +478,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+
 
 
 
@@ -487,7 +503,8 @@ HomeModule = __decorate([
             __WEBPACK_IMPORTED_MODULE_8__todays_match_todays_match_component__["a" /* TodaysMatchComponent */],
             __WEBPACK_IMPORTED_MODULE_9__season_matches_season_matches_component__["a" /* SeasonMatchesComponent */],
             __WEBPACK_IMPORTED_MODULE_10__d3_components_pie_chart_component__["a" /* PieChartComponent */],
-            __WEBPACK_IMPORTED_MODULE_11__d3_components_run_rate_component__["a" /* RunRateComponent */]
+            __WEBPACK_IMPORTED_MODULE_11__d3_components_run_rate_component__["a" /* RunRateComponent */],
+            __WEBPACK_IMPORTED_MODULE_12__loader_loader_component__["a" /* AppLoader */]
         ],
         imports: [
             __WEBPACK_IMPORTED_MODULE_1__angular_common__["CommonModule"],
@@ -659,6 +676,61 @@ var _a;
 
 /***/ }),
 
+/***/ "../../../../../src/app/home/loader/loader.component.css":
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__("../../../../css-loader/lib/css-base.js")(false);
+// imports
+
+
+// module
+exports.push([module.i, ".loader {\r\n    color: #777;\r\n}\r\n\r\n.loader p {\r\n    font-size: 12px;\r\n}", ""]);
+
+// exports
+
+
+/*** EXPORTS FROM exports-loader ***/
+module.exports = module.exports.toString();
+
+/***/ }),
+
+/***/ "../../../../../src/app/home/loader/loader.component.ts":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__("../../../core/@angular/core.es5.js");
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return AppLoader; });
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+
+var AppLoader = (function () {
+    function AppLoader() {
+    }
+    return AppLoader;
+}());
+__decorate([
+    __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__angular_core__["Input"])(),
+    __metadata("design:type", Object)
+], AppLoader.prototype, "show", void 0);
+AppLoader = __decorate([
+    __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__angular_core__["Component"])({
+        selector: 'app-loader',
+        template: "\n    <div class=\"align-center loader\" *ngIf=\"show\">\n        <i class=\"fa fa-circle-o-notch fa-spin fa-fw fa-2x\"></i>\n        <p>Still loading...</p>\n    </div>\n    ",
+        styles: [__webpack_require__("../../../../../src/app/home/loader/loader.component.css")]
+    })
+], AppLoader);
+
+//# sourceMappingURL=loader.component.js.map
+
+/***/ }),
+
 /***/ "../../../../../src/app/home/season-matches/season-matches.component.css":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -667,7 +739,7 @@ exports = module.exports = __webpack_require__("../../../../css-loader/lib/css-b
 
 
 // module
-exports.push([module.i, "", ""]);
+exports.push([module.i, ".season-matches {\r\n    margin-top: 15px;\r\n}\r\n\r\n@media (max-width: 767px) {\r\n    .season-matches {\r\n        word-wrap: break-word;\r\n    }\r\n}", ""]);
 
 // exports
 
@@ -680,7 +752,7 @@ module.exports = module.exports.toString();
 /***/ "../../../../../src/app/home/season-matches/season-matches.component.html":
 /***/ (function(module, exports) {
 
-module.exports = "<div class=\"col-xs-12 tile\">\r\n    <div class=\"col-xs-12 col-md-8\">\r\n        <h4 class=\"text-uppercase text-muted\">Season's Matches</h4>\r\n    </div>\r\n    <div class=\"col-xs-12 col-sm-6 col-md-4\">\r\n        <input #globalFilter type=\"text\" placeholder=\"Search\" class=\"col-xs-12\">\r\n    </div>\r\n    <div class=\"col-xs-12\">\r\n        <p-dataTable [value]=\"matches\" [globalFilter]=\"globalFilter\">\r\n            <p-column field=\"date\" header=\"Date\"></p-column>\r\n            <p-column field=\"team1\" header=\"Team 1\">\r\n                <ng-template let-col let-match=\"rowData\" pTemplate=\"body\">\r\n                    <i class=\"fa fa-trophy fa-gold\" *ngIf=\"match[col.field] === match.winner\"></i>\r\n                    <span>{{match[col.field]}}</span>\r\n                </ng-template>\r\n            </p-column>\r\n            <p-column field=\"team2\" header=\"Team 2\">\r\n                <ng-template let-col let-match=\"rowData\" pTemplate=\"body\">\r\n                    <i class=\"fa fa-trophy fa-gold\" *ngIf=\"match[col.field] === match.winner\"></i>\r\n                    <span>{{match[col.field]}}</span>\r\n                </ng-template>\r\n            </p-column>\r\n            <p-column field=\"city\" header=\"City\"></p-column>\r\n        </p-dataTable>\r\n    </div>\r\n</div>"
+module.exports = "<div class=\"col-xs-12 tile\">\r\n    <div class=\"col-xs-12 col-md-8\">\r\n        <h4 class=\"text-uppercase text-muted\">Season's Matches - {{season}}</h4>\r\n    </div>\r\n    <div class=\"col-xs-12 col-sm-6 col-md-4\">\r\n        <input #globalFilter type=\"text\" placeholder=\"Search\" class=\"col-xs-12\">\r\n    </div>\r\n\r\n    <div class=\"clearfix\"></div>\r\n    <app-loader [show]=\"!matches\"></app-loader>\r\n\r\n    <div class=\"col-xs-12 season-matches\">\r\n        <p-dataTable [value]=\"matches\" [globalFilter]=\"globalFilter\">\r\n            <p-column field=\"date\" header=\"Date\"></p-column>\r\n            <p-column field=\"team1\" header=\"Team 1\">\r\n                <ng-template let-col let-match=\"rowData\" pTemplate=\"body\">\r\n                    <i class=\"fa fa-trophy fa-gold\" *ngIf=\"match[col.field] === match.winner\"></i>\r\n                    <span>{{match[col.field]}}</span>\r\n                </ng-template>\r\n            </p-column>\r\n            <p-column field=\"team2\" header=\"Team 2\">\r\n                <ng-template let-col let-match=\"rowData\" pTemplate=\"body\">\r\n                    <i class=\"fa fa-trophy fa-gold\" *ngIf=\"match[col.field] === match.winner\"></i>\r\n                    <span>{{match[col.field]}}</span>\r\n                </ng-template>\r\n            </p-column>\r\n            <p-column field=\"city\" header=\"City\"></p-column>\r\n        </p-dataTable>\r\n    </div>\r\n</div>"
 
 /***/ }),
 
@@ -709,6 +781,10 @@ __decorate([
     __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__angular_core__["Input"])(),
     __metadata("design:type", Array)
 ], SeasonMatchesComponent.prototype, "matches", void 0);
+__decorate([
+    __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__angular_core__["Input"])(),
+    __metadata("design:type", Object)
+], SeasonMatchesComponent.prototype, "season", void 0);
 SeasonMatchesComponent = __decorate([
     __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__angular_core__["Component"])({
         selector: 'app-season-matches',
@@ -742,7 +818,7 @@ module.exports = module.exports.toString();
 /***/ "../../../../../src/app/home/todays-match/todays-match.component.html":
 /***/ (function(module, exports) {
 
-module.exports = "<div class=\"col-xs-12 tile\">\r\n    <h4 class=\"text-uppercase text-muted\">Today's Matches</h4>\r\n    <div>\r\n        <div *ngFor=\"let match of matches\" class=\"col-xs-12 col-md-6 match-info\">\r\n            <p>\r\n                <b class=\"text-uppercase\">\r\n                    {{match.team1}}\r\n                </b> \r\n                vs\r\n                <b class=\"text-uppercase\">\r\n                    {{match.team2}}\r\n                </b>\r\n            </p>\r\n            <p class=\"success-text\">\r\n                <span>\r\n                    Winner: {{match.winner}} by \r\n                </span>\r\n                <span *ngIf=\"checkValidity(match.win_by_runs)\">\r\n                    {{match.win_by_runs}} runs\r\n                </span>\r\n                <span *ngIf=\"checkValidity(match.win_by_wickets)\">\r\n                    {{match.win_by_wickets}} wickets\r\n                </span>\r\n            </p>\r\n        </div>\r\n    </div>\r\n    <div class=\"clearfix\"></div>\r\n    <small class=\"text-muted\">Note: Assuming today's date is {{date}}.</small>\r\n</div>"
+module.exports = "<div class=\"col-xs-12 tile\">\r\n    <h4 class=\"text-uppercase text-muted\">Today's Matches</h4>\r\n    <div>\r\n        <div *ngFor=\"let match of matches\" class=\"col-xs-12 col-md-6 match-info\">\r\n            <p>\r\n                <b class=\"text-uppercase\">\r\n                    {{match.team1}}\r\n                </b> vs\r\n                <b class=\"text-uppercase\">\r\n                    {{match.team2}}\r\n                </b>\r\n            </p>\r\n            <p class=\"success-text\">\r\n                <span>\r\n                    Winner: {{match.winner}} by \r\n                </span>\r\n                <span *ngIf=\"checkValidity(match.win_by_runs)\">\r\n                    {{match.win_by_runs}} runs\r\n                </span>\r\n                <span *ngIf=\"checkValidity(match.win_by_wickets)\">\r\n                    {{match.win_by_wickets}} wickets\r\n                </span>\r\n            </p>\r\n        </div>\r\n    </div>\r\n    <div class=\"align-center\" *ngIf=\"matches && !matches.length\">No matches today...</div>\r\n    <app-loader [show]=\"!matches\"></app-loader>\r\n    <div class=\"clearfix\"></div>\r\n    <small class=\"text-muted\">Note: Assuming today's date is {{date}}.</small>\r\n</div>"
 
 /***/ }),
 
